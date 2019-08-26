@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 function ResponseSuccess(message, data, res) {
     if (!res) {
         return {
@@ -5,11 +7,13 @@ function ResponseSuccess(message, data, res) {
             data
         };
     }
-    // TODO: custom status code response
-    return res.status(200).json({
+
+    const response = _.omitBy({
         message,
         data
-    });
+    }, _.isNil);
+    // TODO: custom status code response
+    return res.status(200).json(repsonse);
 }
 
 function ResponseError(message, res) {
