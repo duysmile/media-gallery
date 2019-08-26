@@ -13,7 +13,7 @@ function ResponseSuccess(message, data, res) {
         data
     }, _.isNil);
     // TODO: custom status code response
-    return res.status(200).json(repsonse);
+    return res.status(200).json(response);
 }
 
 function ResponseError(message, res) {

@@ -20,8 +20,12 @@ class VideoController {
                 try {
                     const streamFileType = await fileType.stream(file);
                     const validFileName = `${fileName}-${Date.now()}`;
-                    const writeStream = fs.createWriteStream(`/uploads/${validFileName}.${streamFileType.fileType.ext}`);
-                    streamFileType.pipe(writeStream);    
+                    const writeStream = fs.createWriteStream(`uploads/${validFileName}.${streamFileType.fileType.ext}`);
+                    streamFileType.pipe(writeStream).on('error', error => {
+                        console.error(error);
+                        busboy.removeAllListeners();
+                        next(error);
+                    });    
                 } catch (error) {
                     console.error(error);
                     busboy.removeAllListeners();
