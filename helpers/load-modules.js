@@ -5,6 +5,7 @@ exports.loadModulesInDir = (dir, app) => {
     const currentDirectory = path.resolve(__dirname, `../${dir}`);
     const allFilesInDir = fs.readdirSync(currentDirectory);
     switch(dir) {
+        case 'views-routes':
         case 'apis': {
             allFilesInDir.forEach(file => {
                 if (file === 'index.js') {
