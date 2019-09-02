@@ -1,10 +1,15 @@
 const kue = require('kue');
 const queue = kue.createQueue();
 
-const convertVideo = require('./convert-video');
-// TODO: config queue here
-const numberOfConcurrency = 5;
-queue.process('convert-video', numberOfConcurrency, convertVideo);
+const convertVideoWorker = require('./convert-video');
+
+// config number of concurrency
+const numberOfConcurrency = {
+    convertVideo: 5
+};
+
+// Init process handler
+queue.process('convert-video', numberOfConcurrency.convertVideo, convertVideoWorker.process);
 
 module.exports = {
     kue,
