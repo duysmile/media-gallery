@@ -1,10 +1,13 @@
 const hbjs = require('handbrake-js');
+const fs = require('fs');
+const { videoRepository } = require('../repositories');
 
 class ConvertVideoWorker {
     process(job, done) {
+        const { path, title, videoId } = job.data;
         hbjs.spawn({
-            input: job.data.path,
-            output: `uploads/${Date.now()}.mp4`,
+            input: path,
+            output: `uploads/${title}_${videoId}_480p.mp4`,
             // preset: 'Very Fast 720p30',
             preset: 'Very Fast 480p30',
         })
@@ -25,10 +28,10 @@ class ConvertVideoWorker {
             });
     }
 
-    create(queue, { path }) {
-        const jobConvertVideo = queue.create('convert-video', { path }).save();
+    create(queue, { videoId, title, path }) {
+        const jobConvertVideo = queue.create('convert-video', { path, title, videoId }).save();
         jobConvertVideo
-            .attempt(3) // number of retries
+            .attempts(3) // number of retries
             .backoff({
                 delay: 60 * 1000,
                 type: 'fixed' // also has type exponential
@@ -36,6 +39,25 @@ class ConvertVideoWorker {
             .removeOnComplete(true)
             .on('complete', () => {
                 console.log(`Convert video ${path} completed.`);
+                // TODO: fs stat
+                const fullPath = `uploads/${title}_${videoId}_480p.mp4`;
+                fs.stat(fullPath, (err, stats) => {
+                    if (err) {
+                        console.error(err);
+                        return;
+                    }
+                    videoRepository.create({
+                        videoId,
+                        title,
+                        type: {
+                            size: stats.size,
+                            url: fullPath,
+                            quality: '480p',
+                        }
+                    }).then(() => {
+                        console.log('stored DB successfully');
+                    })
+                });
             })
             .on('failed attempt', (err, doneAttempt) => {
                 console.error(`Convert video ${path} failed with error ${err.message}`);

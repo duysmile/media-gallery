@@ -3,29 +3,29 @@ const { mongoose } = require('../models');
 const Schema = mongoose.Schema;
 
 const videoSchema = new Schema({
-    resolution: [{
+    title: {
+        type: String,
+        minlength: 1,
+        maxlength: 100,
+        required: true
+    },
+    videoId: {
+        type: String,
+        required: true
+    },
+    description: {
+        type: String,
+        minlength: 3,
+        maxlength: 1000
+    },
+    type: [{
         size: {
             type: Number,
             min: 1,
-            max: 10,
+            max: 1024 * 1024 * 1024 * 3,
             require: true
         },
-        unit: {
-            type: String,
-            enum: ['KB', 'MB', 'GB'],
-            require: true
-        },
-        width: {
-            type: Number,
-            enum: [],
-            require: true
-        },
-        height: {
-            type: Number,
-            enum: [],
-            require: true
-        },
-        type: {
+        quality: {
             type: String,
             enum: ['1080p', '720p', '480p'],
             require: true
@@ -36,8 +36,7 @@ const videoSchema = new Schema({
             max: 300,
             require: true
         }
-    }],
-
+    }]
 }, {
         timestamps: true,
         collection: 'videos'

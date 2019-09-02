@@ -1,7 +1,7 @@
 const Busboy = require('busboy');
 const fs = require('fs');
+const uuidV1 = require('uuid/v1');
 
-const { videoRepository } = require('../repositories');
 const { ResponseSuccess } = require('../helpers/response.helper');
 const { queue } = require('../workers');
 const convertVideoWorker = require('../workers/convert-video');
@@ -12,15 +12,19 @@ class VideoController {
             const busboy = new Busboy({
                 headers: req.headers,
                 limits: {
+                    files: 1,
                     fileSize: 600 * 1024 * 1024 // 600MB
                 }
             });
 
-            let pathFile = '';
-            busboy.on('file', async (fieldName, file, fileName, encoding, mimetype) => {
+            let hasFile = false;
+            busboy.on('file', async (_fieldName, file, fileName, _encoding, _mimetype) => {
                 try {
-                    const validFileName = `upload_${Date.now()}`;
-                    pathFile = `uploads/${validFileName}.mp4`;
+                    hasFile = true;
+                    const title = fileName.split('.');
+                    const videoId = uuidV1();
+                    const validFileName = `${title[0]}_${Date.now()}`;
+                    const pathFile = `uploads/${validFileName}.mp4`;
                     const writeStream = fs.createWriteStream(pathFile);
 
                     file.on('limit', () => {
@@ -34,10 +38,12 @@ class VideoController {
 
                     file.pipe(writeStream).on('finish', () => {
                         convertVideoWorker.create(queue, {
-                            path: pathFile
+                            videoId,
+                            title: title[0],
+                            path: pathFile,
                         });
                         
-                        return ResponseSuccess('UPLOAD_SUCCESS', null, res);
+                        return ResponseSuccess('UPLOAD_SUCCESS', videoId, res);
                     });
                 } catch (error) {
                     busboy.removeAllListeners();
@@ -49,6 +55,12 @@ class VideoController {
             busboy.on('error', (err) => {
                 busboy.removeAllListeners();
                 return next(err);
+            });
+
+            busboy.on('finish', () => {
+                if (!hasFile) {
+                    return next(new Error('FILE_NOT_FOUND'));
+                }
             });
 
             req.pipe(busboy);

@@ -10,8 +10,12 @@ const errorHandler = require('./common/errorHandler');
 const app = express();
 
 // Config app
-app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ 
+    extended: false,
+    // limit: '10GB',
+    // parameterLimit: 1000000
+}));
 app.use(compression());
 app.set('view engine', 'ejs');
 app.use('/job-queue', kue.app);
