@@ -79,6 +79,10 @@ class VideoController {
             next(error);
         }
     }
+
+    async showAllVideos(req, res, next) {
+
+    }
 }
 
 module.exports = new VideoController();

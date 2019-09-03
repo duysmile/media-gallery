@@ -9,6 +9,12 @@ const videoSchema = new Schema({
         maxlength: 100,
         required: true
     },
+    screenShot: {
+        type: String,
+        min: 5,
+        max: 300,
+        require: true
+    },
     videoId: {
         type: String,
         required: true

@@ -1,4 +1,5 @@
 const hbjs = require('handbrake-js');
+const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const { videoRepository } = require('../repositories');
 
@@ -39,24 +40,35 @@ class ConvertVideoWorker {
             .removeOnComplete(true)
             .on('complete', () => {
                 console.log(`Convert video ${path} completed.`);
-                // TODO: fs stat
+                // TODO: handle error
                 const fullPath = `uploads/${title}_${videoId}_480p.mp4`;
                 fs.stat(fullPath, (err, stats) => {
                     if (err) {
                         console.error(err);
                         return;
                     }
-                    videoRepository.create({
-                        videoId,
-                        title,
-                        type: {
-                            size: stats.size,
-                            url: fullPath,
-                            quality: '480p',
-                        }
-                    }).then(() => {
-                        console.log('stored DB successfully');
-                    })
+                    const screenShot = `uploads/${title}_${videoId}_480p.jpeg`;
+                    const screenShotVideo = new ffmpeg(fullPath);
+                    screenShotVideo.screenshots({
+                        count: 1,
+                        filename: `${title}_${videoId}_480p.jpeg`,
+                        folder: 'uploads',
+                        timemarks: ['30'], // number of seconds
+                        size: '320x240'
+                    }).on('end', () => {
+                        videoRepository.create({
+                            videoId,
+                            title,
+                            screenShot,
+                            type: {
+                                size: stats.size,
+                                url: fullPath,
+                                quality: '480p',
+                            }
+                        }).then(() => {
+                            console.log('stored DB successfully');
+                        });
+                    });
                 });
             })
             .on('failed attempt', (err, doneAttempt) => {
