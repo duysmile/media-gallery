@@ -42,7 +42,7 @@ class VideoController {
                             title: title[0],
                             path: pathFile,
                         });
-                        
+
                         return ResponseSuccess('UPLOAD_SUCCESS', videoId, res);
                     });
                 } catch (error) {
@@ -81,7 +81,47 @@ class VideoController {
     }
 
     async showAllVideos(req, res, next) {
+        try {
 
+        } catch (error) {
+
+        }
+    }
+
+    async loadVideo(req, res, next) {
+        try {
+            const path = 'uploads/sample_ef310c40-cef1-11e9-8078-a7132ff9e63d_480p.mp4';
+            const stat = fs.statSync(path);
+            const fileSize = stat.size;
+            const range = req.headers.range;
+            if (range) {
+                const parts = range.replace(/bytes=/, '').split('-');
+                const start = parseInt(parts[0], 10);
+                const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+                const chunkSize = (end - start) + 1;
+                const file = fs.createReadStream(path, { start, end });
+                const headers = {
+                    'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': chunkSize,
+                    'Content-Type': 'video/mp4'
+                };
+
+                res.writeHead(206, headers);
+                file.pipe(res);
+            } else {
+                const headers = {
+                    'Content-Type': 'video/mp4',
+                    'Content-Length': fileSize
+                };
+
+                res.write(200, headers);
+                fs.createReadStream(path).pipe(res);
+            }
+        } catch (error) {
+            next(error);
+        }
     }
 }
 
