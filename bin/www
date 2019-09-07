@@ -1,7 +1,9 @@
 require('dotenv').config();
 const http = require('http');
+
 const app = require('../app');
 const { connectDB } = require('../models');
+
 
 connectDB().then(() => {
     console.log('DB Connected');

@@ -5,6 +5,7 @@ const uuidV1 = require('uuid/v1');
 const { ResponseSuccess } = require('../helpers/response.helper');
 const { queue } = require('../workers');
 const convertVideoWorker = require('../workers/convert-video');
+const { videoRepository } = require('../repositories');
 
 class VideoController {
     async uploadVideo(req, res, next) {
@@ -69,28 +70,40 @@ class VideoController {
         }
     }
 
-    async renderQueue(req, res, next) {
+    // async renderQueue(req, res, next) {
+    //     try {
+    //         queue.active((err, ids) => {
+    //             const jobs = ids.map(id => id);
+    //             return res.render('ejs/index', { jobs });
+    //         })
+    //     } catch (error) {
+    //         next(error);
+    //     }
+    // }
+
+    async showAllVideos(req, res, next) {
         try {
-            queue.active((err, ids) => {
-                const jobs = ids.map(id => id);
-                return res.render('ejs/index', { jobs });
-            })
+            const videos = await videoRepository.getAll({
+                sort: '-createdAt',
+                fields: 'videoId title screenShot type'
+            });
+
+            return ResponseSuccess('GET_VIDEOS_SUCCESS', videos, res);
         } catch (error) {
             next(error);
         }
     }
 
-    async showAllVideos(req, res, next) {
-        try {
-
-        } catch (error) {
-
-        }
-    }
-
     async loadVideo(req, res, next) {
         try {
-            const path = 'uploads/sample_ef310c40-cef1-11e9-8078-a7132ff9e63d_480p.mp4';
+            const { videoId } = req.params;
+            const dataVideo = await videoRepository.getOne({
+                where: {
+                    videoId
+                },
+                fields: 'type.url'
+            });
+            const path = dataVideo.type[0].url;
             const stat = fs.statSync(path);
             const fileSize = stat.size;
             const range = req.headers.range;
