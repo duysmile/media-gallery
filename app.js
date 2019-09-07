@@ -17,7 +17,6 @@ app.use(bodyParser.urlencoded({
     // parameterLimit: 1000000
 }));
 app.use(compression());
-app.set('view engine', 'ejs');
 app.use('/job-queue', kue.app);
 
 // Load apis
