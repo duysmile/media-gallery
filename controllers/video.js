@@ -85,10 +85,27 @@ class VideoController {
         try {
             const videos = await videoRepository.getAll({
                 sort: '-createdAt',
-                fields: 'videoId title screenShot type'
+                fields: 'videoId title screenShot'
             });
 
             return ResponseSuccess('GET_VIDEOS_SUCCESS', videos, res);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getVideo(req, res, next) {
+        try {
+            const { videoId } = req.params;
+            const video = await videoRepository.getOne({
+                where: {
+                    videoId
+                },
+                sort: '-createdAt',
+                fields: 'type title screenShot'
+            });
+
+            return ResponseSuccess('GET_VIDEO_SUCCESS', video, res);
         } catch (error) {
             next(error);
         }
