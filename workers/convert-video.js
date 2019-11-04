@@ -24,41 +24,63 @@ class ConvertVideoWorker {
             );
         }).on('end', () => {
             const fullPath = `uploads/${title}_${videoId}_480p.mp4`;
-            fs.stat(fullPath, (err, stats) => {
-                if (err) {
-                    return done(err);
-                }
-                const screenShot = `uploads/${title}_${videoId}_480p.jpeg`;
-                const screenShotVideo = new ffmpeg(fullPath);
-                const screeShotVideoStream = screenShotVideo.screenshots({
-                    count: 1,
-                    filename: `${title}_${videoId}_480p.jpeg`,
-                    folder: 'uploads',
-                    timemarks: ['30'], // number of seconds
-                    size: '320x240'
+            ffmpeg(fullPath).outputOptions([
+                '-codec copy',
+                '-start_number 0',
+                '-hls_time 10',
+                '-hls_list_size 0',
+                '-bsf:v h264_mp4toannexb',
+                '-f hls'
+            ])
+                .on('progress', function (progress) {
+                    console.log('Processing: ' + progress.percent + '% done');
                 })
+                .on('stderr', function (stderrLine) {
+                    console.log('Stderr output: ' + stderrLine);
+                })
+                .on('error', function (err, stdout, stderr) {
+                    console.log('Cannot process video: ' + err.message);
+                })
+                .on('end', function (stdout, stderr) {
+                    console.log('Transcoding succeeded !');
+                })
+                .saveToFile(`uploads/index.m3u8`);
+            // ffmpeg -i filename.mp4 -codec: copy -start_number 0 -hls_time 10 -hls_list_size 0 -f hls filename.m3u8
+            // fs.stat(fullPath, (err, stats) => {
+            //     if (err) {
+            //         return done(err);
+            //     }
+            //     const screenShot = `uploads/${title}_${videoId}_480p.jpeg`;
+            //     const screenShotVideo = new ffmpeg(fullPath);
+            //     const screeShotVideoStream = screenShotVideo.screenshots({
+            //         count: 1,
+            //         filename: `${title}_${videoId}_480p.jpeg`,
+            //         folder: 'uploads',
+            //         timemarks: ['30'], // number of seconds
+            //         size: '320x240'
+            //     })
 
-                screeShotVideoStream.on('error', (err) => {
-                    screeShotVideoStream.removeAllListeners();
-                    return done(err);
-                }).on('end', () => {
-                    videoRepository.create({
-                        videoId,
-                        title,
-                        screenShot,
-                        type: {
-                            size: stats.size,
-                            url: fullPath,
-                            quality: '480p',
-                        }
-                    }).then(() => {
-                        console.log('stored DB successfully');
-                        done();
-                    }).catch(err => {
-                        done(err);
-                    });
-                });
-            });
+            //     screeShotVideoStream.on('error', (err) => {
+            //         screeShotVideoStream.removeAllListeners();
+            //         return done(err);
+            //     }).on('end', () => {
+            //         videoRepository.create({
+            //             videoId,
+            //             title,
+            //             screenShot,
+            //             type: {
+            //                 size: stats.size,
+            //                 url: fullPath,
+            //                 quality: '480p',
+            //             }
+            //         }).then(() => {
+            //             console.log('stored DB successfully');
+            //             done();
+            //         }).catch(err => {
+            //             done(err);
+            //         });
+            //     });
+            // });
         });
     }
 

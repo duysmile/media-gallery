@@ -14,7 +14,7 @@ class VideoController {
                 headers: req.headers,
                 limits: {
                     files: 1,
-                    fileSize: 600 * 1024 * 1024 // 600MB
+                    fileSize: 6000 * 1024 * 1024 // 600MB
                 }
             });
 
